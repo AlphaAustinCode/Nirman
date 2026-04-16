@@ -1,14 +1,25 @@
 const mongoose = require('mongoose');
 
-const UserSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    phone: { type: String, required: true, unique: true },
-    secondaryPhone: { type: String },
-    email: { type: String },
-    password: { type: String, required: true },
-    passbookNumber: { type: String, required: true },
-    address: { type: String, required: true },
-    trustScore: { type: Number, default: 100 },
+const userSchema = new mongoose.Schema({
+    consumer_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Consumer',
+        required: true,
+        unique: true
+    },
+    phone: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    email: {
+        type: String,
+        required: true
+    },
+    password: {
+        type: String,
+        required: true // Will be hashed via bcrypt
+    }
 }, { timestamps: true });
 
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model('User', userSchema);
