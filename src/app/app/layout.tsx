@@ -42,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Flame className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-[#FF6B35] to-[#FFC857] bg-clip-text text-transparent">
-              GasShare
+              Eendhan Bandhu
             </span>
           </div>
           <nav className="flex-1 px-4 py-8 space-y-2">
@@ -103,7 +103,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Flame className="w-5 h-5 text-white" />
                 </div>
                 <span className="font-bold text-xl bg-gradient-to-r from-[#FF6B35] to-[#FFC857] bg-clip-text text-transparent">
-                  GasShare
+                  Eendhan Bandhu
                 </span>
               </div>
               <div className="hidden lg:block">
@@ -123,10 +123,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <Button variant="ghost" className="flex items-center gap-2 hover:bg-slate-100 rounded-full sm:rounded-xl h-10 px-2 sm:px-3">
                       <Avatar className="h-8 w-8 border border-white shadow-sm ring-2 ring-slate-100">
                         <AvatarFallback className="bg-gradient-to-br from-[#FF6B35] to-[#FFC857] text-white font-bold text-xs">
-                          JD
+                          AS
                         </AvatarFallback>
                       </Avatar>
-                      <span className="hidden sm:inline font-medium text-slate-700">John Doe</span>
+                      <span className="hidden sm:inline font-medium text-slate-700">Aditya Sanka</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-xl border-slate-200">

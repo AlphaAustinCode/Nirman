@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Search, Star, Clock, AlertTriangle, ChevronRight, Fingerprint, IndianRupee } from "lucide-react";
+import { MapPin, Search, Star, Clock, AlertTriangle, ChevronRight, Fingerprint, IndianRupee, Flame, CheckCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import MapWrapper from "@/components/MapWrapper";

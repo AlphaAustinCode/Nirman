@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import SmoothScroller from "@/components/SmoothScroller";
 
-const geistSans = Geist({
+const inter = Inter({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
+const robotoMono = Roboto_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "GasShare",
+  title: "Eendhan Bandhu",
   description: "Community-powered LPG sharing platform",
 };
 
@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${robotoMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <SmoothScroller>

@@ -72,7 +72,7 @@ export default function LandingPage() {
               <Flame className="w-6 h-6 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-[#FF6B35] to-[#FFC857] bg-clip-text text-transparent">
-              GasShare
+              Eendhan Bandhu
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -161,7 +161,7 @@ export default function LandingPage() {
       {/* Features */}
       <section className="features-section container mx-auto px-4 py-24 relative z-10">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-slate-900">Why Choose GasShare?</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-slate-900">Why Choose Eendhan Bandhu?</h2>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           <Card className="feature-card p-6 bg-white/80 backdrop-blur-sm border-white/50 shadow-lg hover:shadow-xl transition-shadow">
@@ -222,10 +222,10 @@ export default function LandingPage() {
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF6B35] to-[#FFC857] flex items-center justify-center">
                 <Flame className="w-5 h-5 text-white" />
               </div>
-              <span className="font-semibold text-slate-800">GasShare</span>
+              <span className="font-semibold text-slate-800">Eendhan Bandhu</span>
             </div>
             <p className="text-sm text-slate-500">
-              © 2026 GasShare. Supporting communities in need.
+              © 2026 Eendhan Bandhu. Supporting communities in need.
             </p>
             <div className="flex gap-6 text-sm text-slate-500 font-medium">
               <Link href="#" className="hover:text-[#FF6B35] transition-colors">Privacy</Link>

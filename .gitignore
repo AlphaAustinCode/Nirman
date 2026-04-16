@@ -1,51 +1,97 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ==========================================
+# Project Specific .gitignore (Next.js + Node.js Backend)
+# ==========================================
 
-# Legacy Migration Folders
-/_legacy_vite/
-/temp-next/
+# ------------------------------------------
+# Dependencies
+# ------------------------------------------
+# Main frontend node modules
+node_modules/
+# Backend specifically-scoped node modules
+backend/node_modules/
 
+# ------------------------------------------
+# Framework & Build Outputs (Next.js)
+# ------------------------------------------
+.next/
+out/
+build/
+# Next.js typescript trace/definition caches
+.tsbuildinfo
+next-env.d.ts
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
+# ------------------------------------------
+# Environment Variables & Secrets
+# ------------------------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Generic secrets
+*.env
 *.pem
 
-# debug
+# ------------------------------------------
+# Logs, Cache & Temp Files
+# ------------------------------------------
+# NPM / Package Manager debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+# Generic logs
+logs/
+*.log
+# Testing coverage
+coverage/
 
-# env files (can opt-in for committing if needed)
-.env*
+# ------------------------------------------
+# Operating System Files
+# ------------------------------------------
+# Windows 
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
 
-# vercel
-.vercel
+# ------------------------------------------
+# IDE & Editor Files
+# ------------------------------------------
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# ------------------------------------------
+# Legacy / Migration Folders
+# ------------------------------------------
+# Existing legacy directories in the project
+/_legacy_vite/
+/temp-next/
 
-# Large Media
+# ------------------------------------------
+# Databases and Binaries
+# ------------------------------------------
+*.sqlite
+*.sqlite3
+*.db
+*.iso
+*.dmg
+*.exe
+*.dll
+*.bin
+
+# ------------------------------------------
+# Large Media & Archives
+# ------------------------------------------
 *.mp4
 *.mov
 *.avi
@@ -57,20 +103,8 @@ next-env.d.ts
 *.psd
 *.ai
 *.sketch
-
-# Archives
 *.zip
 *.tar
 *.tar.gz
 *.rar
 *.7z
-
-# Databases and Binaries
-*.sqlite
-*.sqlite3
-*.db
-*.iso
-*.dmg
-*.exe
-*.dll
-*.bin

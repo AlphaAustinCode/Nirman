@@ -1,113 +1,157 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Flame, ArrowRight, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Flame, Loader2, LogIn } from "lucide-react";
+import Link from "next/link";
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState("");
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
+    identifier: "", // phone number
+    password: "",
+  });
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError("");
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneNumber || phoneNumber.length < 10) {
-      toast.error("Please enter a valid phone number");
+    setIsLoading(true);
+    setError("");
+
+    if (!formData.identifier || formData.identifier.length < 10) {
+      setError("Please enter a valid phone number");
+      setIsLoading(false);
       return;
     }
-    
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+
+    if (!formData.password) {
+      setError("Please enter your password");
       setIsLoading(false);
-      toast.success("Welcome back!");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone: formData.identifier,
+          password: formData.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Login failed");
+        return;
+      }
+
+      localStorage.setItem("user", JSON.stringify(data.user));
       router.push("/app");
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+      setError("Server connection failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center p-4">
-      {/* Background with abstract shapes mimicking Gas rings/WebGPU particles but in CSS for speed */}
-      <div className="absolute inset-0 z-0 overflow-hidden bg-slate-50">
-        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-[#FF6B35]/20 to-[#FFC857]/20 blur-[100px]" />
-        <div className="absolute top-[40%] -right-[10%] w-[40%] h-[40%] rounded-full bg-gradient-to-tl from-[#FF6B35]/10 to-[#4A90E2]/10 blur-[80px]" />
-      </div>
+    <main className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg h-96 bg-[#FF6B35]/20 blur-[120px] rounded-full pointer-events-none"></div>
 
-      <div className="relative z-10 w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700">
-        <div className="flex justify-center mb-8">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FF6B35] to-[#FFC857] flex items-center justify-center shadow-lg shadow-[#FF6B35]/20 group-hover:scale-110 transition-transform">
-              <Flame className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-3xl font-extrabold bg-gradient-to-r from-[#FF6B35] to-[#FFC857] bg-clip-text text-transparent">
-              GasShare
-            </span>
-          </Link>
+      <div className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden relative z-10 p-8 animate-in fade-in zoom-in-95 duration-500">
+        <div className="text-center mb-8">
+          <div className="mx-auto bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mb-4 text-[#FF6B35]">
+            <Flame size={32} />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
+          <p className="text-slate-400 text-sm">
+            Access your Eendhan Bandhu dashboard
+          </p>
         </div>
 
-        <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-xl rounded-2xl overflow-hidden">
-          <CardHeader className="space-y-2 pb-6">
-            <CardTitle className="text-2xl font-bold text-center text-slate-800">Welcome Back</CardTitle>
-            <CardDescription className="text-center text-slate-500 font-medium">
-              Enter your phone number to sign in
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-slate-700 font-bold">Phone Number</Label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-medium">+91</span>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="Enter your 10 digit number"
-                    className="pl-12 h-14 bg-slate-50 border-slate-200 text-lg rounded-xl focus:border-[#FF6B35] focus:ring-[#FF6B35]/20 transition-all font-medium"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    maxLength={10}
-                  />
-                </div>
-              </div>
+        {error && (
+          <div className="mb-6 p-3 rounded bg-red-500/10 border border-red-500/50 text-red-400 text-sm text-center">
+            {error}
+          </div>
+        )}
 
-              <div className="flex justify-end">
-                <Button variant="link" className="px-0 text-[#FF6B35] font-semibold text-sm hover:text-[#FF6B35]/80 hover:no-underline">
-                  Forgot Password?
-                </Button>
-              </div>
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-1">
+              Registered Phone Number
+            </label>
+            <input
+              type="text"
+              name="identifier"
+              required
+              value={formData.identifier}
+              onChange={handleChange}
+              placeholder="Enter your 10 digit number"
+              maxLength={10}
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#FF6B35] focus:ring-1 focus:ring-[#FF6B35] transition-colors"
+            />
+          </div>
 
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-14 bg-gradient-to-r from-[#FF6B35] to-[#FFC857] hover:opacity-90 shadow-lg text-lg rounded-xl font-bold transition-all"
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-sm font-medium text-slate-400">
+                Password
+              </label>
+              <a
+                href="#"
+                className="text-xs text-[#FF6B35] hover:underline"
               >
-                {isLoading ? (
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                ) : (
-                  <>
-                    Sign In
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-          <CardFooter className="justify-center border-t border-slate-100 pt-6">
-            <p className="text-slate-500 font-medium selection:bg-[#FFE5D9]">
-              Don't have an account?{" "}
-              <Link href="/register" className="text-[#FF6B35] font-bold hover:underline">
-                Sign up
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
+                Forgot password?
+              </a>
+            </div>
+            <input
+              type="password"
+              name="password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="••••••••"
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#FF6B35] focus:ring-1 focus:ring-[#FF6B35] transition-colors"
+            />
+          </div>
+
+          <button
+            disabled={isLoading}
+            type="submit"
+            className="w-full mt-4 bg-[#FF6B35] hover:bg-[#e85a24] text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+          >
+            {isLoading ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : (
+              <>
+                <LogIn size={18} /> Sign In
+              </>
+            )}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center text-sm text-slate-400">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/register"
+            className="text-[#FF6B35] hover:underline font-medium"
+          >
+            Register here
+          </Link>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
