@@ -45,6 +45,7 @@ async function registerConsumerAccount({
     phone: normalizedPhone,
     email: normalizedEmail,
     password: passwordHash,
+    full_name: consumer.full_name,
   });
 
   consumer.email = normalizedEmail;

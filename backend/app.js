@@ -8,6 +8,7 @@ const errorHandler = require("./middleware/errorHandler");
 const healthRoutes = require("./routes/healthRoutes");
 const authRoutes = require("./routes/authRoutes");
 const consumerRoutes = require("./routes/consumerRoutes");
+const sharingRoutes = require("./routes/sharingRoutes");
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use("/api", apiLimiter);
 app.use("/api", healthRoutes);
 app.use("/api", authRoutes);
 app.use("/api", consumerRoutes);
+app.use("/api", sharingRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

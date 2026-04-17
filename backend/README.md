@@ -17,6 +17,18 @@ This backend implements a MongoDB-first registration and login system for Eendha
 - `GET /api/consumer-details`
 - `POST /api/register`
 - `POST /api/login`
+- `GET /api/user/profile`
+- `GET /api/listings`
+- `POST /api/listings`
+- `GET /api/listings/mine`
+- `DELETE /api/listings/:id`
+- `GET /api/requests`
+- `POST /api/requests`
+- `POST /api/requests/:id/respond`
+- `POST /api/requests/:id/complete`
+- `GET /api/notifications`
+- `POST /api/notifications/:id/read`
+- `GET /api/history`
 
 ## Registration flow
 
