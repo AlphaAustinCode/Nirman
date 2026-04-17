@@ -7,17 +7,7 @@ export async function GET(request: NextRequest) {
 
   return proxyToBackend({
     method: "GET",
-    path: `/listings${query ? `?${query}` : ""}`,
-    request,
-  });
-}
-
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-
-  return proxyToBackend({
-    path: "/requests",
-    body,
+    path: `/notifications${query ? `?${query}` : ""}`,
     request,
   });
 }
