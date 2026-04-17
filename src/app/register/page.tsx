@@ -28,12 +28,88 @@ type RegisterFormData = {
   confirmPassword: string;
 };
 
+type ApiResponse<T> = {
+  success: boolean;
+  message?: string;
+  data?: T;
+};
+
+type AgencyValidationData = {
+  consumer: {
+    id: string;
+    full_name: string;
+    is_registered: boolean;
+    masked_phone: string;
+  };
+};
+
+type SendOtpData = {
+  consumer_id: string;
+  phone: string;
+  expires_in_seconds: number;
+  resend_after_seconds: number;
+};
+
+type VerifyOtpData = {
+  registration_token: string;
+};
+
+type ConsumerDetailsData = {
+  full_name: string;
+  registered_phone: string;
+  address: string;
+  email: string | null;
+  secondary_phone: string | null;
+};
+
+type RegisterData = {
+  access_token: string;
+  user: {
+    id: string;
+    phone: string;
+    email: string;
+  };
+  consumer: {
+    id: string;
+    full_name: string;
+    registered_phone: string;
+    address: string;
+    email: string | null;
+    secondary_phone: string | null;
+  };
+};
+
+async function parseApiResponse<T>(response: Response): Promise<ApiResponse<T>> {
+  const payload = (await response.json()) as ApiResponse<T>;
+
+  if (!response.ok || !payload.success) {
+    throw new Error(payload.message || "Request failed");
+  }
+
+  return payload;
+}
+
+function formatPhoneForDisplay(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+
+  if (digits.length >= 10) {
+    const lastTen = digits.slice(-10);
+    return `${lastTen.slice(0, 5)} ${lastTen.slice(5)}`;
+  }
+
+  return phone;
+}
+
 export default function RegisterPage() {
   const router = useRouter();
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [maskedPhone, setMaskedPhone] = useState("");
+  const [verifiedPhone, setVerifiedPhone] = useState("");
+  const [registrationToken, setRegistrationToken] = useState("");
 
   const [formData, setFormData] = useState<RegisterFormData>({
     agencyId: "",
@@ -58,6 +134,7 @@ export default function RegisterPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setError("");
+    setStatusMessage("");
 
     if (name === "agencyId") {
       setFormData((prev) => ({
@@ -85,7 +162,7 @@ export default function RegisterPage() {
       return;
     }
 
-    if (name === "phone" || name === "secondaryPhone") {
+    if (name === "secondaryPhone") {
       const onlyDigits = value.replace(/\D/g, "").slice(0, 10);
       setFormData((prev) => ({
         ...prev,
@@ -100,14 +177,12 @@ export default function RegisterPage() {
     }));
   };
 
-  const fakeDelay = (ms = 1000) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
-
   const handleAgencyValidation = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
     setError("");
+    setStatusMessage("");
 
     if (!formData.agencyId.trim()) {
       setError("Please enter your agency ID.");
@@ -121,10 +196,46 @@ export default function RegisterPage() {
 
     try {
       setIsLoading(true);
-      await fakeDelay();
+
+      const validateResponse = await fetch("/api/auth/validate-agency", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          agency_code: formData.agencyId,
+          passbook_number: formData.lpgId,
+        }),
+      });
+
+      const validatePayload =
+        await parseApiResponse<AgencyValidationData>(validateResponse);
+
+      if (validatePayload.data?.consumer.is_registered) {
+        throw new Error(
+          "This LPG consumer is already registered. Please sign in instead."
+        );
+      }
+
+      setMaskedPhone(validatePayload.data?.consumer.masked_phone || "");
+
+      const sendOtpResponse = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          agency_code: formData.agencyId,
+          passbook_number: formData.lpgId,
+        }),
+      });
+
+      const sendOtpPayload = await parseApiResponse<SendOtpData>(sendOtpResponse);
+      setVerifiedPhone(sendOtpPayload.data?.phone || "");
+      setStatusMessage(sendOtpPayload.message || "OTP sent successfully.");
       setStep(2);
-    } catch {
-      setError("Unable to verify LPG details. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to verify LPG details.");
     } finally {
       setIsLoading(false);
     }
@@ -135,6 +246,7 @@ export default function RegisterPage() {
   ) => {
     e.preventDefault();
     setError("");
+    setStatusMessage("");
 
     if (!/^\d{6}$/.test(formData.otp)) {
       setError("Please enter a valid 6-digit OTP.");
@@ -143,19 +255,52 @@ export default function RegisterPage() {
 
     try {
       setIsLoading(true);
-      await fakeDelay();
+
+      const verifyResponse = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone: verifiedPhone,
+          otp: formData.otp,
+        }),
+      });
+
+      const verifyPayload = await parseApiResponse<VerifyOtpData>(verifyResponse);
+      const token = verifyPayload.data?.registration_token;
+
+      if (!token) {
+        throw new Error("Registration token was not returned after OTP verification.");
+      }
+
+      setRegistrationToken(token);
+
+      const profileResponse = await fetch("/api/auth/consumer-details", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const profilePayload =
+        await parseApiResponse<ConsumerDetailsData>(profileResponse);
 
       setFormData((prev) => ({
         ...prev,
-        name: "Rahul Sharma",
-        phone: "9876543210",
-        address: "Flat 12B, Shanti Nagar, Mumbai",
-        email: "rahulsharma@example.com",
+        name: profilePayload.data?.full_name || "",
+        phone: formatPhoneForDisplay(profilePayload.data?.registered_phone || ""),
+        address: profilePayload.data?.address || "",
+        email: profilePayload.data?.email || "",
+        secondaryPhone: profilePayload.data?.secondary_phone
+          ? formatPhoneForDisplay(profilePayload.data.secondary_phone).replace(/\s/g, "")
+          : "",
       }));
 
+      setStatusMessage("OTP verified successfully. Review your LPG profile details.");
       setStep(3);
-    } catch {
-      setError("OTP verification failed. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "OTP verification failed.");
     } finally {
       setIsLoading(false);
     }
@@ -166,6 +311,7 @@ export default function RegisterPage() {
   ) => {
     e.preventDefault();
     setError("");
+    setStatusMessage("");
 
     if (!formData.email.trim()) {
       setError("Please enter your email address.");
@@ -194,6 +340,13 @@ export default function RegisterPage() {
   ) => {
     e.preventDefault();
     setError("");
+    setStatusMessage("");
+
+    if (!registrationToken) {
+      setError("Your registration session has expired. Please verify OTP again.");
+      setStep(2);
+      return;
+    }
 
     if (!formData.password || !formData.confirmPassword) {
       setError("Please complete the password fields.");
@@ -220,11 +373,35 @@ export default function RegisterPage() {
 
     try {
       setIsLoading(true);
-      await fakeDelay(1200);
-      alert("Registration successful!");
-      router.push("/login");
-    } catch {
-      setError("Registration failed. Please try again.");
+
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${registrationToken}`,
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          secondary_phone: formData.secondaryPhone
+            ? `+91${formData.secondaryPhone}`
+            : undefined,
+          password: formData.password,
+        }),
+      });
+
+      const payload = await parseApiResponse<RegisterData>(response);
+
+      if (payload.data?.access_token) {
+        localStorage.setItem("token", payload.data.access_token);
+      }
+
+      if (payload.data?.user) {
+        localStorage.setItem("user", JSON.stringify(payload.data.user));
+      }
+
+      router.push("/login?registered=1");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Registration failed.");
     } finally {
       setIsLoading(false);
     }
@@ -237,7 +414,6 @@ export default function RegisterPage() {
       <div className="auth-shell flex flex-1 items-center justify-center py-3">
         <div className="auth-card auth-bottom-sheet fade-scale w-full max-w-6xl max-h-[92vh] overflow-hidden">
           <div className="auth-card-inner grid h-full grid-cols-1 lg:grid-cols-[0.95fr_1.2fr]">
-            {/* LEFT PANEL */}
             <section className="auth-divider flex flex-col justify-between border-b border-slate-200/50 px-5 py-5 lg:border-b-0 lg:px-7 lg:py-6">
               <div>
                 <div className="auth-kicker mb-4 w-fit">
@@ -294,10 +470,8 @@ export default function RegisterPage() {
               </div>
             </section>
 
-            {/* RIGHT PANEL */}
             <section className="flex flex-col justify-center px-5 py-5 lg:px-7 lg:py-6">
               <div className="mx-auto w-full max-w-2xl">
-                {/* Header */}
                 <div className="mb-5">
                   <div className="mb-2 text-xs font-semibold tracking-[0.18em] text-blue-700">
                     REGISTER
@@ -310,7 +484,6 @@ export default function RegisterPage() {
                   </p>
                 </div>
 
-                {/* Stepper */}
                 <div className="mb-5">
                   <div className="relative flex items-center justify-between">
                     <div className="absolute left-0 top-4 h-[3px] w-full rounded-full bg-slate-200" />
@@ -330,16 +503,22 @@ export default function RegisterPage() {
                           className="relative z-10 flex flex-col items-center gap-1.5"
                         >
                           <div
-                            className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm transition-all duration-300 lg:h-10 lg:w-10 ${isActive
+                            className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm transition-all duration-300 lg:h-10 lg:w-10 ${
+                              isActive
                                 ? "border-blue-500 bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-200"
                                 : "border-slate-200 bg-white text-slate-400"
-                              }`}
+                            }`}
                           >
-                            {isDone ? <CheckCircle2 size={16} /> : <Icon size={16} />}
+                            {isDone ? (
+                              <CheckCircle2 size={16} />
+                            ) : (
+                              <Icon size={16} />
+                            )}
                           </div>
                           <span
-                            className={`text-[11px] font-medium lg:text-xs ${isActive ? "text-blue-700" : "text-slate-400"
-                              }`}
+                            className={`text-[11px] font-medium lg:text-xs ${
+                              isActive ? "text-blue-700" : "text-slate-400"
+                            }`}
                           >
                             {s.label}
                           </span>
@@ -349,10 +528,13 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Error */}
                 {error && <div className="alert-error mb-4">{error}</div>}
+                {statusMessage && !error && (
+                  <div className="mb-4 rounded-[16px] border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    {statusMessage}
+                  </div>
+                )}
 
-                {/* STEP 1 */}
                 {step === 1 && (
                   <form
                     onSubmit={handleAgencyValidation}
@@ -409,7 +591,6 @@ export default function RegisterPage() {
                   </form>
                 )}
 
-                {/* STEP 2 */}
                 {step === 2 && (
                   <form
                     onSubmit={handleOtpVerification}
@@ -420,8 +601,7 @@ export default function RegisterPage() {
                         OTP sent successfully
                       </p>
                       <p className="text-sm leading-6 text-slate-500">
-                        We’ve sent a 6-digit OTP to your registered mobile
-                        number linked to this LPG ID.
+                        We sent a 6-digit OTP to {maskedPhone || "your registered mobile number"}.
                       </p>
                     </div>
 
@@ -471,7 +651,6 @@ export default function RegisterPage() {
                   </form>
                 )}
 
-                {/* STEP 3 */}
                 {step === 3 && (
                   <form
                     onSubmit={handleProfileUpdate}
@@ -548,7 +727,6 @@ export default function RegisterPage() {
                   </form>
                 )}
 
-                {/* STEP 4 */}
                 {step === 4 && (
                   <form
                     onSubmit={handleFinalSubmit}
@@ -635,7 +813,7 @@ export default function RegisterPage() {
       </div>
 
       <footer className="auth-footer py-2">
-        <div className="text-sm text-slate-500">© 2026 LPG Platform</div>
+        <div className="text-sm text-slate-500">(c) 2026 LPG Platform</div>
 
         <div className="auth-footer-links">
           <Link href="/policy">Policy</Link>

@@ -1,13 +1,37 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+const { createClient } = require("@supabase/supabase-js");
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-    console.warn("⚠️ Supabase credentials are missing from .env");
+function requireEnv(name, value) {
+  if (!value) {
+    throw new Error(`${name} is not configured`);
+  }
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+function createSupabaseClient(key) {
+  requireEnv("SUPABASE_URL", supabaseUrl);
+  requireEnv("SUPABASE client key", key);
 
-module.exports = supabase;
+  return createClient(supabaseUrl, key, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
+function getSupabaseOtpClient() {
+  return createSupabaseClient(supabaseAnonKey);
+}
+
+function getSupabaseAdminClient() {
+  return createSupabaseClient(supabaseServiceRoleKey);
+}
+
+module.exports = {
+  getSupabaseOtpClient,
+  getSupabaseAdminClient,
+};

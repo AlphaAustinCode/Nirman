@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Flame,
   Loader2,
@@ -12,20 +12,51 @@ import {
   ArrowRight,
 } from "lucide-react";
 
+type LoginResponse = {
+  success: boolean;
+  message?: string;
+  data?: {
+    access_token: string;
+    user: {
+      id: string;
+      phone: string;
+      email: string;
+    };
+    consumer: {
+      id: string;
+      full_name: string;
+      address: string;
+      agency_id: string;
+    };
+  };
+};
+
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    identifier: "",
+    phone: "",
     password: "",
   });
 
+  const registeredNotice = useMemo(
+    () =>
+      searchParams.get("registered") === "1"
+        ? "Registration completed successfully. Please sign in."
+        : "",
+    [searchParams]
+  );
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]:
+        name === "phone" ? value.replace(/\D/g, "").slice(0, 10) : value,
     }));
     setError("");
   };
@@ -34,8 +65,8 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
-    if (!formData.identifier.trim()) {
-      setError("Please enter your phone number, email, or LPG ID.");
+    if (!/^\d{10}$/.test(formData.phone)) {
+      setError("Please enter your registered 10-digit mobile number.");
       return;
     }
 
@@ -47,34 +78,35 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
 
-      const response = await fetch("http://localhost:5000/login", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          identifier: formData.identifier,
+          phone: formData.phone,
           password: formData.password,
         }),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as LoginResponse;
 
-      if (!response.ok) {
+      if (!response.ok || !data.success || !data.data) {
         throw new Error(data?.message || "Login failed");
       }
 
-      if (data?.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-      }
-
-      if (data?.token) {
-        localStorage.setItem("token", data.token);
-      }
+      localStorage.setItem("token", data.data.access_token);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...data.data.user,
+          consumer: data.data.consumer,
+        })
+      );
 
       router.push("/app");
-    } catch (err: any) {
-      setError(err?.message || "Unable to login. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to login.");
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +117,6 @@ export default function LoginPage() {
       <div className="auth-shell flex flex-1 items-center justify-center py-3">
         <div className="auth-card auth-bottom-sheet fade-scale w-full max-w-6xl max-h-[92vh] overflow-hidden">
           <div className="auth-card-inner grid h-full grid-cols-1 lg:grid-cols-[0.95fr_1.05fr]">
-            {/* LEFT PANEL */}
             <section className="auth-divider flex flex-col justify-between border-b border-slate-200/50 px-5 py-5 lg:border-b-0 lg:px-7 lg:py-6">
               <div>
                 <div className="auth-kicker mb-4 w-fit">
@@ -141,7 +172,6 @@ export default function LoginPage() {
               </div>
             </section>
 
-            {/* RIGHT PANEL */}
             <section className="flex flex-col justify-center px-5 py-5 lg:px-7 lg:py-6">
               <div className="mx-auto w-full max-w-xl">
                 <div className="mb-5">
@@ -156,19 +186,24 @@ export default function LoginPage() {
                   </p>
                 </div>
 
+                {registeredNotice && !error && (
+                  <div className="mb-4 rounded-[16px] border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    {registeredNotice}
+                  </div>
+                )}
                 {error && <div className="alert-error mb-4">{error}</div>}
 
                 <form onSubmit={handleLogin} className="space-y-4 fade-up">
                   <div>
                     <label className="label-premium">
-                      Phone Number / Email / LPG ID
+                      Registered Mobile Number
                     </label>
                     <input
                       type="text"
-                      name="identifier"
-                      value={formData.identifier}
+                      name="phone"
+                      value={formData.phone}
                       onChange={handleChange}
-                      placeholder="Enter your registered phone, email, or LPG ID"
+                      placeholder="Enter your 10-digit mobile number"
                       className="input-premium"
                       autoComplete="username"
                     />
@@ -249,7 +284,7 @@ export default function LoginPage() {
       </div>
 
       <footer className="auth-footer py-2">
-        <div className="text-sm text-slate-500">© 2026 LPG Platform</div>
+        <div className="text-sm text-slate-500">(c) 2026 LPG Platform</div>
 
         <div className="auth-footer-links">
           <Link href="/policy">Policy</Link>

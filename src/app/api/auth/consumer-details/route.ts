@@ -1,12 +1,10 @@
 import { proxyToBackend } from "@/lib/backend-api";
 import { NextRequest } from "next/server";
 
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-
+export async function GET(request: NextRequest) {
   return proxyToBackend({
-    path: "/register",
-    body,
+    method: "GET",
+    path: "/consumer-details",
     request,
   });
 }
